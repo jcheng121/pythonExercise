@@ -17,6 +17,7 @@ def compare(n1,n2):
 n = int(input("Please enter an interger: "))
 fibOfN = fibanacciRecursive(n, result)
 print result[n]
+
 outputF = open("fibanacciSeq.txt", 'w')
 index = 0
 for value in result :
