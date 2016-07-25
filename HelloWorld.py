@@ -28,14 +28,27 @@ def inputScore():
            elif score >= 0.6 : strScore ="D"
            else              : strScore ="F"
     except:
-        print "Please enter a number between 0, and 1.0"
+        print "Bad score"
     return strScore;
 
-returnScore = None
-while ( not(returnScore == "q")):
-    returnScore = inputScore()
-    print returnScore
+def inputData():
+    data = None
+    try:
+        what = raw_input("Enter a number : (done or Done to quit)")
+        if what == "done" or what == "Done" :
+            data = "q";
+        else:
+            data = int(what)
+    except:
+        print "Invalid Input"
+    return data;
 
+returnValue = None
+largest = None
+while ( not(returnValue == "q" )):
+    returnValue = inputData()
+    if (type(returnValue) is int) and (largest is None or returnValue > largest) :
+        largest = returnValue
 print "Done!"
-
+print "Largest number found: ", largest
 
