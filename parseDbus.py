@@ -1,24 +1,9 @@
-import json
-
-audioTable = {}
-
-def updateAudioTable (audioDict) :
-    if audioDict['audioSource'] != None :
-        audioTable[audioDict['audioSource']] = audioDict
-    return audioTable
+#! /usr/bin/python
 
 import json
 def splitbyJson(line) :
     what = json.loads(line)
     return what;
-
-dbusHandle = open ('dbus.log', 'r')
-matchingArray = ["audioSources",
-                 "operStatus"]
-messageStatistic = {}
-
-for matching in matchingArray :
-    messageStatistic[matching] = 0
 
 def printList (list):
     for key in list:
@@ -35,11 +20,19 @@ def printDict (audioDict) :
             print "%20s ==> %-40s" % (key, audioDict[key])
     print "\n"
 
+matchingArray = ["audioSources"]
+messageStatistic = {}
+
+for matching in matchingArray :
+    messageStatistic[matching] = 0
+
 lookingFor = None
 keepLine = None
 count = 0
 
-for line in dbusHandle :
+dbusHandle = open ('dbus.log', 'r')
+
+for line in dbusHandle :   
     line = line.strip()
     if lookingFor is None :
         for matching in matchingArray:
