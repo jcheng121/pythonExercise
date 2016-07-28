@@ -1,14 +1,6 @@
 import json
 
 audioTable = {}
-audioDictTemplate = {'displayString': None,
-                     'uuid': None,
-                     'id': None,
-                     "isPlaying": None,
-                    "isAvailable": None,
-                    'audioSource': None,
-                    'displayAvailable': None,
-                    'appIcon': None}
 
 def updateAudioTable (audioDict) :
     if audioDict['audioSource'] != None :
@@ -20,53 +12,63 @@ def splitbyJson(line) :
     what = json.loads(line)
     return what;
 
-def splitByAudioDictionary (line, audioDict):
-    count = 0
-    audioKeys = audioDict.keys()
-    for key in audioKeys :
-        posKey = line.find(key)
-        if posKey >= 0 :
-            tempLine     = line[posKey+len(key)+1:]
-            #print tempLine;
-            semiColonPos = tempLine.find(':')
-            commaPos     = tempLine.find(',')
-            if commaPos < 0 :
-                commaPos = len(tempLine) # Reach the end of the string
-            #print semiColonPos, ' ', commaPos
-            audioDict[key] = tempLine[semiColonPos+1:commaPos]
-            line = line[:posKey] + line[posKey + len(key) + commaPos:]
-    return audioDict
-
 dbusHandle = open ('dbus.log', 'r')
-matching = "audioSources\":"
+matchingArray = ["audioSources",
+                 "operStatus"]
+messageStatistic = {}
 
-def printAudioDict (audioDict) :
+for matching in matchingArray :
+    messageStatistic[matching] = 0
+
+def printList (list):
+    for key in list:
+        if type(key).__name__ == 'dict':
+            printDict(key)
+        else:
+            print key
+
+def printDict (audioDict) :
     for key in audioDict :
-        if not audioDict[key] is None :
+        if type(audioDict[key]).__name__ == 'list' :
+            printList(audioDict[key])
+        else:
             print "%20s ==> %-40s" % (key, audioDict[key])
     print "\n"
 
-index = 0
+lookingFor = None
+keepLine = None
+count = 0
+
 for line in dbusHandle :
     line = line.strip()
-    if not line.startswith("signal sender") and not line.startswith("method call") and not line.startswith("method return sender"):
-        line = line.replace("string","")
-        pos = line.find(matching)
-        if pos >= 0:
-            index = index + 1
-            print "=========================================================================================="
-            print "Found %d %s message!!!" % (index, matching[:len(matching)-3])
-            print "=========================================================================================="
-            pos = line.find("[")
-            line = line[pos+1 : line.find("]")]
-            while line != '' :
-                leftBrace = line.find("{")
-                rightBrace = line.find("}")
-                source = line[leftBrace:rightBrace+1]
-                line = line[rightBrace+1:]
-                print source
-                #audioDict = splitByAudioDictionary(source, audioDictTemplate)
-                audioDict = splitbyJson(source)
-                printAudioDict(audioDict)
+    if lookingFor is None :
+        for matching in matchingArray:
+            pos = line.find(matching)
+            if pos >= 0:
+                lookingFor = matching
+                break
+    else:
+        line = line.replace("string \"","")
+        if not keepLine is None :
+            line = keepLine + line
+            line = line.replace(r'\n',"")
+            line = line.rstrip("\"")
+            keepLine = None
+        if count == 2 :
+            break;
+        try:
+            line = line.rstrip("\"")
+            audioDict = splitbyJson(line)
+        except:
+            keepLine = line
+            count = count + 1
+            continue
+        index = messageStatistic[lookingFor] = messageStatistic[lookingFor] + 1
+        print "=========================================================================================="
+        print "Found %d %s message!!!" % (index, lookingFor)
+        print "=========================================================================================="
+        printDict(audioDict)
+        keepLine = None
+        lookingFor = None
+        count = 0
 dbusHandle.close()
-
