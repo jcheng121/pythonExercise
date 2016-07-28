@@ -57,13 +57,11 @@ matchingArray = ["selectDevice",
                  "deviceState",
                  "playState",
                  "nowPlaying"]
+                
 messageStatistic = {}
-
-for matching in matchingArray :
-    messageStatistic[matching] = 0
-    
 originalFile= []
 commandForm = {}
+
 with open ('dbus.log', 'r') as dbusHandle :    
     for line in dbusHandle :
         line = line.strip()  
@@ -92,7 +90,7 @@ with open ('dbus.log', 'r') as dbusHandle :
             except:
                 keepLine = line
                 continue
-            index = messageStatistic[lookingFor] = messageStatistic[lookingFor] + 1
+            index = messageStatistic[lookingFor] = messageStatistic.get(lookingFor,0) + 1
             print "="*80
             print "Found %d %s %s !!" % (index, lookingFor, commandForm["message"])    
             print "-"*80
@@ -102,3 +100,6 @@ with open ('dbus.log', 'r') as dbusHandle :
             keepLine = None
             lookingFor = None
 dbusHandle.close()
+
+
+
