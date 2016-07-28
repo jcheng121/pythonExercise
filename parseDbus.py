@@ -1,44 +1,66 @@
-#! /usr/bin/python
+import json
+
+audioTable = {}
+
+def updateAudioTable (audioDict) :
+    if audioDict['audioSource'] != None :
+        audioTable[audioDict['audioSource']] = audioDict
+    return audioTable
 
 import json
 def splitbyJson(line) :
     what = json.loads(line)
     return what;
 
-def printList (list):
-    for key in list:
-        if type(key).__name__ == 'dict':
-            printDict(key)
-        else:
-            print key
+dbusHandle = open ('dbus.log', 'r')
+matchingArray = ["selectDevice",
+                 "activeDevice",
+                 "operStatus",
+                 "audioSources",
+                 "start",
+                 "deviceState"]
 
-def printDict (audioDict) :
-    for key in audioDict :
-        if type(audioDict[key]).__name__ == 'list' :
-            printList(audioDict[key])
-        else:
-            print "%20s ==> %-40s" % (key, audioDict[key])
-    print "\n"
-
-matchingArray = ["audioSources"]
 messageStatistic = {}
 
 for matching in matchingArray :
     messageStatistic[matching] = 0
 
+def printList (list):
+    for key in list:
+        if type(key).__name__ == 'dict':
+            printDict(key, False)
+        elif type(audioDict[key]).__name__ == 'list' :
+            printList(audioDict[key])
+        else:
+            print key
+
+def printDict (audioDict, skipLine) :
+    for key in audioDict :
+        if type(audioDict[key]).__name__ == 'list' :
+            printList(audioDict[key])
+        elif type(audioDict[key]).__name__ == 'dict' :
+
+            print "%s {" % key
+            printDict(audioDict[key], True)
+            print "}"
+        else:
+            print "%20s ==> %-40s" % (key, audioDict[key])
+    if skipLine == False : print "\n"
+
 lookingFor = None
 keepLine = None
-count = 0
 
-dbusHandle = open ('dbus.log', 'r')
-
-for line in dbusHandle :   
+for line in dbusHandle :
     line = line.strip()
     if lookingFor is None :
         for matching in matchingArray:
+            lookingFor = matching
+            matching = "string \"" + matching + "\""
             pos = line.find(matching)
-            if pos >= 0:
-                lookingFor = matching
+            if pos < 0:
+                lookingFor = None
+                continue
+            else:
                 break
     else:
         line = line.replace("string \"","")
@@ -47,21 +69,17 @@ for line in dbusHandle :
             line = line.replace(r'\n',"")
             line = line.rstrip("\"")
             keepLine = None
-        if count == 2 :
-            break;
         try:
             line = line.rstrip("\"")
             audioDict = splitbyJson(line)
         except:
             keepLine = line
-            count = count + 1
             continue
         index = messageStatistic[lookingFor] = messageStatistic[lookingFor] + 1
         print "=========================================================================================="
         print "Found %d %s message!!!" % (index, lookingFor)
         print "=========================================================================================="
-        printDict(audioDict)
+        printDict(audioDict, False)
         keepLine = None
         lookingFor = None
-        count = 0
 dbusHandle.close()
